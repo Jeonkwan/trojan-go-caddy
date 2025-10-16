@@ -2,13 +2,13 @@
 
 This repository provides helper scripts and configuration to deploy a [Trojan-Go](https://p4gefau1t.github.io/trojan-go/) server with [Caddy](https://caddyserver.com/) as the TLS termination proxy.  The included scripts walk you through provisioning secrets, generating the configuration directories expected by the containers, and starting the docker-compose stack so that you can quickly expose a Trojan-Go service behind Caddy with automatic HTTPS.
 
-## Features
+## ✨ Features
 - **Guided bootstrap script** – `configure_trojan-go.sh` prepares all required directories and configuration files based on your answers to a few prompts.
 - **Automated container lifecycle** – `run_trojan_go` (sourced from `trojan_go_funcs.sh`) builds and starts the docker-compose stack with sensible defaults.
 - **Reverse proxy + TLS** – Caddy handles certificate management and forwards WebSocket traffic to Trojan-Go, providing seamless TLS encryption.
 - **Convenient cleanup** – a single command tears down the containers and removes generated assets when you are finished testing.
 
-## Requirements
+## 🧰 Requirements
 You will need the following tools on the host running the scripts:
 
 | Tool | Purpose | Installation hint |
@@ -32,7 +32,7 @@ sudo apt-get install -y uuid curl
 > docker compose version  # or docker-compose --version
 > ```
 
-## Repository layout
+## 🗂️ Repository layout
 The helper scripts live at the root of the repository:
 
 - `configure_trojan-go.sh` – interactive script that scaffolds configuration directories and files.
@@ -41,7 +41,41 @@ The helper scripts live at the root of the repository:
 - `docker-compose_trojan-go.yml` – compose file that starts the Trojan-Go and Caddy containers.
 - `example/` – example configuration snippets referenced by the setup script.
 
-## Bootstrap the environment
+## 🛠️ Script reference
+Each script is designed to be run from the repository root. The sections below explain how and when to use them.
+
+### 🚀 `configure_trojan-go.sh`
+This is the main bootstrap script you will run first:
+
+- **How to execute:** `source ./configure_trojan-go.sh`
+- **What it does:**
+  - Prompts for your domain, Trojan-Go password, and UUID (with an option to auto-generate one).
+  - Creates the `./caddy`, `./trojan-go`, and `./wwwroot` directories with populated configuration files.
+  - Loads helper functions (including `run_trojan_go`) into your current shell session for later use.
+- **Pro tip:** Because the script is sourced, any environment variables it exports remain available after it finishes. Open a new shell if you want to start over with fresh prompts.
+
+### 🌐 `configure_namecheap_dns.sh`
+Use this optional helper when Namecheap manages your DNS records:
+
+- **How to execute:** `bash ./configure_namecheap_dns.sh`
+- **What it does:**
+  - Interacts with the Namecheap API to set or update A/AAAA records for your domain.
+  - Fetches your public IP automatically (via `curl`) to minimize manual copying.
+  - Validates the response from Namecheap so you know the change succeeded.
+- **Before you run it:**
+  - Export the environment variables `NAMECHEAP_API_USER`, `NAMECHEAP_API_KEY`, `NAMECHEAP_USERNAME`, and `NAMECHEAP_CLIENT_IP`.
+  - Ensure your Namecheap account has API access enabled and whitelists the IP you are calling from.
+
+### ⚙️ `trojan_go_funcs.sh`
+This file collects reusable shell functions that power the scripts:
+
+- **How to use it:** You normally do not run this file directly; it is sourced by `configure_trojan-go.sh`.
+- **Key helpers inside:**
+  - `run_trojan_go` – launches `docker-compose -f docker-compose_trojan-go.yml up -d` and waits for healthy containers.
+  - `cleanup_trojan_go` – stops the stack and removes generated directories when you are finished.
+- **Why it matters:** Keeping the functions in one place makes it easier to reuse them in your own automation or to customize behaviors without editing multiple scripts.
+
+## 🚧 Bootstrap the environment
 1. Clone the repository and change into the directory.
 2. Source the configuration script so it can prompt for the values it needs and create the directory structure.
 
@@ -62,7 +96,7 @@ run_trojan_go
 
 This function wraps `docker-compose -f docker-compose_trojan-go.yml up -d` and waits for the containers to become healthy before returning.
 
-## Generated directories and files
+## 📂 Generated directories and files
 After the bootstrap script completes you should see the following tree:
 
 ```bash
@@ -78,13 +112,13 @@ After the bootstrap script completes you should see the following tree:
 
 The `./ssl` directory will be created automatically by the Caddy container when certificates are obtained.
 
-## Configuration notes
+## 📝 Configuration notes
 - **Multiple users:** Edit `./trojan-go/config.json` to add more users to the `password` or `users` list after the initial run.
 - **Custom web root:** Replace the files under `./wwwroot` with your own static site. Caddy serves this directory on port 80/443 to provide legitimate-looking traffic.
 - **DNS setup:** Ensure your domain's A/AAAA records point to the host running this stack. You can adapt `configure_namecheap_dns.sh` or create the records manually via your DNS provider.
 - **Firewall rules:** Open ports 80 and 443 for Caddy, and the Trojan-Go port defined in `config.json` (default 443 when tunneled via WebSocket).
 
-## Operating the stack
+## 🕹️ Operating the stack
 - **Start / restart:** `run_trojan_go`
 - **View logs:**
   - `docker-compose -f docker-compose_trojan-go.yml logs -f caddy`
@@ -92,7 +126,7 @@ The `./ssl` directory will be created automatically by the Caddy container when 
 - **Inspect status:** `docker ps --filter name=trojan-go`
 - **Update configuration:** Modify files in `./caddy` or `./trojan-go` and run `docker-compose -f docker-compose_trojan-go.yml restart <service>`.
 
-## Cleanup
+## 🧹 Cleanup
 To stop the services and remove the generated assets run:
 
 ```bash
@@ -102,14 +136,14 @@ sudo rm -rf ./caddy ./trojan-go ./wwwroot ./ssl
 
 You can re-run `configure_trojan-go.sh` at any time to regenerate clean configuration files.
 
-## Troubleshooting
+## 🩺 Troubleshooting
 | Symptom | Suggested fix |
 | ------- | -------------- |
 | Containers exit immediately | Run `docker-compose -f docker-compose_trojan-go.yml logs` to identify syntax errors in the generated files. |
 | Certificates are not issued | Confirm DNS records resolve to your host and that ports 80/443 are reachable from the internet. |
 | Clients cannot connect | Ensure the UUID/password matches the values in `config.json` and that any upstream firewall allows the Trojan-Go port. |
 
-## Further reading
+## 📚 Further reading
 - [Trojan-Go documentation](https://p4gefau1t.github.io/trojan-go/config/) explains advanced configuration options, including transport modes and routing policies.
 - [Caddy documentation](https://caddyserver.com/docs/) covers reverse proxy directives, TLS automation, and logging customization.
 
