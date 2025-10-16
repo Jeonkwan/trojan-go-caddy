@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Trojan-Go Proxy</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #0f172a;
+        background: radial-gradient(circle at top, #f8fafc, #e2e8f0);
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+      }
+      main {
+        background: rgba(255, 255, 255, 0.85);
+        border-radius: 1rem;
+        padding: 3rem;
+        max-width: 32rem;
+        text-align: center;
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.15);
+      }
+      h1 {
+        font-size: clamp(2rem, 4vw, 2.75rem);
+        margin-bottom: 1rem;
+      }
+      p {
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+      }
+      code {
+        background: #f1f5f9;
+        border-radius: 0.5rem;
+        padding: 0.25rem 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>All Systems Operational</h1>
+      <p>
+        This endpoint serves as a decoy site for the Trojan-Go proxy.
+        Legitimate visitors simply see this static page, while clients connect
+        securely over the hidden WebSocket path.
+      </p>
+      <p>
+        Administrators can manage the deployment by following the
+        <code>docs/deployment-guide.md</code> instructions in the
+        accompanying repository.
+      </p>
+    </main>
+  </body>
+</html>

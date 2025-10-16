@@ -1,0 +1,103 @@
+---
+- name: Provision Docker dependencies and deploy Trojan-Go + Caddy
+  hosts: trojan_go
+  become: true
+  vars:
+    docker_arch_map:
+      x86_64: amd64
+      aarch64: arm64
+      armv7l: armhf
+      armv8l: arm64
+    docker_apt_release: "{{ ansible_distribution_release | lower }}"
+    docker_apt_arch: "{{ docker_arch_map.get(ansible_architecture, 'amd64') }}"
+    docker_repo: "deb [arch={{ docker_apt_arch }} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ docker_apt_release }} stable"
+    compose_command: "docker compose --env-file .env -f docker/compose.yml{{ ' --profile watchtower' if trojan_enable_watchtower else '' }} up -d"
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+  tasks:
+    - name: Install base dependencies
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - python3
+          - python3-pip
+          - git
+          - make
+        state: present
+
+    - name: Add Docker GPG key
+      ansible.builtin.get_url:
+        url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+        dest: /usr/share/keyrings/docker-archive-keyring.gpg
+        mode: "0644"
+
+    - name: Add Docker apt repository
+      ansible.builtin.apt_repository:
+        repo: "{{ docker_repo }}"
+        filename: docker
+        state: present
+
+    - name: Install Docker Engine and Compose plugin
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+
+    - name: Ensure Docker service is enabled
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Create project directory
+      ansible.builtin.file:
+        path: "{{ trojan_project_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Clone trojan-go-caddy repository
+      ansible.builtin.git:
+        repo: "{{ trojan_repo_url }}"
+        version: "{{ trojan_repo_version }}"
+        dest: "{{ trojan_project_dir }}"
+        update: true
+
+    - name: Install Python requirements for template rendering
+      ansible.builtin.pip:
+        requirements: docker/scripts/requirements.txt
+        chdir: "{{ trojan_project_dir }}"
+        executable: pip3
+
+    - name: Write environment configuration
+      ansible.builtin.template:
+        src: templates/env.j2
+        dest: "{{ trojan_project_dir }}/.env"
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Render configuration templates
+      ansible.builtin.command: make render
+      args:
+        chdir: "{{ trojan_project_dir }}"
+      environment:
+        ENV_FILE: ./.env
+
+    - name: Deploy Docker stack
+      ansible.builtin.command: "{{ compose_command }}"
+      args:
+        chdir: "{{ trojan_project_dir }}"
+

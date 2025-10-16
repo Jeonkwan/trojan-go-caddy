@@ -1,0 +1,23 @@
+---
+# Repository configuration
+# Override trojan_repo_url if you maintain a fork with custom changes.
+trojan_repo_url: "https://github.com/Jeonkwan/trojan-go-caddy.git"
+trojan_repo_version: "main"
+
+# Directory on the remote host where the project will live.
+trojan_project_dir: "/opt/trojan-go-caddy"
+
+# Required stack settings
+# Replace these placeholder values before running the playbook.
+trojan_domain: "trojan.example.com"
+trojan_email: "you@example.com"
+trojan_password: "please-change-me"
+
+# Optional overrides with sensible defaults
+trojan_websocket_path: "/trojan"
+trojan_port: 8443
+trojan_timezone: "UTC"
+trojan_watchtower_interval: 300
+
+# Set to true to also pull in the Watchtower profile after deployment.
+trojan_enable_watchtower: false

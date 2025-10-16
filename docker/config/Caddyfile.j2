@@ -1,0 +1,15 @@
+{{ domain }} {
+    tls {{ email }}
+
+    encode gzip
+    root * /srv
+    file_server
+
+    @trojan_ws {
+        header Connection *Upgrade*
+        header Upgrade websocket
+        path {{ websocket_path }}
+    }
+
+    reverse_proxy @trojan_ws trojan-go:{{ trojan_port }}
+}
