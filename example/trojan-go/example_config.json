@@ -12,6 +12,11 @@
         "key": "server.key",
         "fallback_port": 1234
     },
+    "websocket": {
+        "enabled": true,
+        "path": "/trojan",
+        "hostname": "www.yourdomain.com"
+    },
     "mux": {
         "enabled": true
     }

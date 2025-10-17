@@ -4,6 +4,10 @@ SAMPLE_RANDOM_PASS="my-uuid-string-or-other-silly-words"
 SAMPLE_DOMAIN="placeholder.example.com"
 PINGPONG_HTML_URL="https://raw.githubusercontent.com/ofcyln/one-html-page-challenge/master/entries/ping-pong.html"
 
+DEFAULT_WEBSOCKET_PATH="/trojan"
+WEBSOCKET_PATH="${WEBSOCKET_PATH:-${DEFAULT_WEBSOCKET_PATH}}"
+WEBSOCKET_PATH="/${WEBSOCKET_PATH#/}"
+
 [[ -z "${FULL_DOMAIN_NAME}" ]] && { read -r -p "Specify Domain name: (e.g.: ${SAMPLE_DOMAIN})" FULL_DOMAIN_NAME; }
 [[ -z "${TROJAN_PASSWORD}" ]] && { read -r -p "Specify Trojan Pass: (e.g.: default random pass [${SAMPLE_RANDOM_PASS}])" TROJAN_PASSWORD; }
 
@@ -23,6 +27,13 @@ ${FULL_DOMAIN_NAME}:443 {
     root /usr/src/trojan
     log /usr/src/caddy.log
     index index.html
+
+    proxy ${WEBSOCKET_PATH} https://trojan-go:443 {
+        websocket
+        header_upstream Host {host}
+        transparent
+        insecure_skip_verify
+    }
 }
 EOF
 
@@ -43,6 +54,11 @@ cat > ./trojan-go/config.json <<-EOF
         "key": "$SSL_KEY_PATH",
         "sni": "$FULL_DOMAIN_NAME"
     },
+    "websocket": {
+        "enabled": true,
+        "path": "$WEBSOCKET_PATH",
+        "hostname": "$FULL_DOMAIN_NAME"
+    },
     "mux": {
         "enabled": true
     }
@@ -52,5 +68,5 @@ EOF
 echo "prepare index.html"
 mkdir -p ./wwwroot/trojan
 echo "" > ./wwwroot/caddy.log
-curl $PINGPONG_HTML_URL -o ./wwwroot/trojan/index.html
+curl "$PINGPONG_HTML_URL" -o ./wwwroot/trojan/index.html
 
