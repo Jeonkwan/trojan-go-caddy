@@ -148,6 +148,40 @@ compose` remotely. Set `trojan_enable_watchtower: true` in
 `ansible/group_vars/all.yml` if you want the Watchtower service to launch along
 with Caddy and Trojan-Go.
 
+## 🌐 Updating Namecheap Dynamic DNS
+
+Namecheap accounts include a Dynamic DNS password that can be used to refresh a
+host's IP address. Populate the following keys in your `.env` file (the example
+template already contains placeholders):
+
+```
+DNS_HOST=trojan          # Use "@" for the root record
+DNS_DOMAIN=example.com   # Your registered domain
+NAMECHEAP_DDNS_PASSWORD=...  # Value generated in the Namecheap dashboard
+```
+
+Once those values are configured, invoke the helper script via the Make target:
+
+```bash
+make dns-update
+```
+
+By default Namecheap records the caller's public IP. If you need to set a
+specific address, provide an `IP` value when invoking the target or call the
+script directly:
+
+```bash
+make dns-update IP=203.0.113.10
+```
+
+```bash
+python3 docker/scripts/update_dns.py --env-file .env --ip 203.0.113.10
+```
+
+Append `--dry-run` to preview the request without contacting Namecheap. The
+script replaces the legacy `configure_namecheap_dns.sh` helper and keeps your
+credentials inside the version-controlled `.env` workflow.
+
 ## 🔄 Automating other environments
 
 The templated approach makes it straightforward to integrate with tools such as

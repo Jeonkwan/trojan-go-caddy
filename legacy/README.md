@@ -6,6 +6,10 @@ original manual setup process for Trojan-Go and Caddy on a single host. The
 scripts remain available for historical reference or for operators who need to
 reproduce the legacy environment exactly, but they are no longer maintained.
 
+> **Looking for DNS updates?** Use `docker/scripts/update_dns.py` (or
+> `make dns-update`) in the repository root instead of the legacy
+> `configure_namecheap_dns.sh` helper.
+
 ## Contents
 
 | File | Purpose |

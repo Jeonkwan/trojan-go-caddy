@@ -5,7 +5,7 @@ COMPOSE_FILE := docker/compose.yml
 ENV_FILE ?= .env
 RENDERED_DIR := rendered
 
-.PHONY: render up down restart logs ps status deploy config clean test
+.PHONY: render up down restart logs ps status deploy config clean test dns-update
 
 render:
 	@echo "[render] Using $(ENV_FILE) -> $(RENDERED_DIR)"
@@ -31,6 +31,9 @@ ps status:
 
 config:
 	$(COMPOSE) --env-file "$(ENV_FILE)" -f "$(COMPOSE_FILE)" config
+
+dns-update:
+	python3 docker/scripts/update_dns.py --env-file "$(ENV_FILE)" $(if $(IP),--ip "$(IP)")
 
 clean:
 	rm -rf "$(RENDERED_DIR)"

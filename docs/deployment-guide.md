@@ -168,6 +168,25 @@ to WebSocket. This disguises the traffic as regular web requests.
 | Stop everything | `make down` |
 | Remove generated configs | `make clean` |
 | Preview combined Compose file | `make config` |
+| Refresh Namecheap Dynamic DNS | `make dns-update [IP=203.0.113.10]` |
+
+### Updating Dynamic DNS
+
+If your domain is registered with Namecheap, you can update the record's IP
+address without leaving the repository. Fill in `DNS_HOST`, `DNS_DOMAIN`, and
+`NAMECHEAP_DDNS_PASSWORD` in `.env`, then run:
+
+```bash
+make dns-update
+```
+
+Supply an `IP` variable when calling the target to force a specific address.
+For a dry run without contacting Namecheap, call the script directly and append
+`--dry-run`:
+
+```bash
+python3 docker/scripts/update_dns.py --env-file .env --dry-run
+```
 
 ### Enabling automatic updates
 
