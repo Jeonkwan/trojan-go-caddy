@@ -1,151 +1,112 @@
-# Trojan-go + Caddy
+# Trojan-Go + Caddy Ansible Role
 
-This repository provides helper scripts and configuration to deploy a [Trojan-Go](https://p4gefau1t.github.io/trojan-go/) server with [Caddy](https://caddyserver.com/) as the TLS termination proxy.  The included scripts walk you through provisioning secrets, generating the configuration directories expected by the containers, and starting the docker-compose stack so that you can quickly expose a Trojan-Go service behind Caddy with automatic HTTPS.
+This repository now provides an Ansible role that provisions the Trojan-Go + Caddy reverse proxy stack used by the [`lightsail-proxy`](https://github.com/Jeonkwan/lightsail-proxy) project.  The role replaces the previous ad-hoc shell scripts so that Terraform or ad-hoc playbooks can deploy and maintain the service declaratively.
 
-## ✨ Features
-- **Guided bootstrap script** – `configure_trojan-go.sh` prepares all required directories and configuration files based on your answers to a few prompts.
-- **Automated container lifecycle** – `run_trojan_go` (sourced from `trojan_go_funcs.sh`) builds and starts the docker-compose stack with sensible defaults.
-- **Reverse proxy + TLS** – Caddy handles certificate management and forwards WebSocket traffic to Trojan-Go, providing seamless TLS encryption.
-- **Convenient cleanup** – a single command tears down the containers and removes generated assets when you are finished testing.
+## 🚀 What the role configures
+- Installs Docker Engine and supporting packages.
+- Creates the directory layout under `/opt/trojan-go-caddy` for Caddy, Trojan-Go, TLS assets, and static web content.
+- Templates configuration for Caddy (`Caddyfile`), Trojan-Go (`config.json`), a placeholder landing page, and the Docker Compose definition.
+- Starts (and reconfigures on changes) the Docker Compose stack using the `community.docker.docker_compose_v2` module.
 
-## 🧰 Requirements
-You will need the following tools on the host running the scripts:
-
-| Tool | Purpose | Installation hint |
-| ---- | ------- | ----------------- |
-| `docker` | Runs the Caddy and Trojan-Go containers | [Docker Engine installation guide](https://docs.docker.com/engine/install/) |
-| `docker-compose` | Orchestrates the multi-container stack | Usually bundled with recent Docker releases |
-| `uuid` | Generates the Trojan-Go user ID during configuration | `sudo apt-get install uuid` |
-| `curl` | Retrieves the public IP address during setup | `sudo apt-get install curl` |
-
-On Debian/Ubuntu hosts you can install the missing packages with:
-
-```bash
-sudo apt-get update
-sudo apt-get install -y uuid curl
+## 📦 Repository layout
+```
+ansible.cfg                     # Local Ansible configuration
+collections/requirements.yml    # Galaxy dependencies (community.docker)
+playbooks/provision.yml         # Example playbook wiring in the role
+roles/
+  trojan_go_caddy/
+    defaults/main.yml           # Role defaults and variable descriptions
+    handlers/main.yml           # Handler to recreate the Docker stack
+    tasks/main.yml              # Main task list
+    templates/                  # Jinja2 templates for generated files
+molecule/default/               # Molecule scenario for local testing
+archive/                        # Deprecated shell scripts kept for reference
 ```
 
-> **Tip:** Verify Docker is ready before proceeding:
->
-> ```bash
-> docker info
-> docker compose version  # or docker-compose --version
-> ```
+The legacy shell helpers (`configure_trojan-go.sh`, `configure_namecheap_dns.sh`, `trojan_go_funcs.sh`, `docker-compose_trojan-go.yml`) now live in the `archive/` directory for historical reference.
 
-## 🗂️ Repository layout
-The helper scripts live at the root of the repository:
+## 🔧 Requirements
+- Python 3.9+
+- [Ansible 8+](https://docs.ansible.com/ansible/latest/installation_guide/index.html)
+- Docker Engine available on the managed host (the role installs it on Debian/Ubuntu)
+- The [`community.docker`](https://galaxy.ansible.com/community/docker) collection (installed automatically via `ansible-galaxy install -r collections/requirements.yml`)
 
-- `configure_trojan-go.sh` – interactive script that scaffolds configuration directories and files.
-- `configure_namecheap_dns.sh` – optional helper to configure Namecheap DNS records via their API.
-- `trojan_go_funcs.sh` – shell functions that include the `run_trojan_go` helper.
-- `docker-compose_trojan-go.yml` – compose file that starts the Trojan-Go and Caddy containers.
-- `example/` – example configuration snippets referenced by the setup script.
-
-## 🛠️ Script reference
-Each script is designed to be run from the repository root. The sections below explain how and when to use them.
-
-### 🚀 `configure_trojan-go.sh`
-This is the main bootstrap script you will run first:
-
-- **How to execute:** `source ./configure_trojan-go.sh`
-- **What it does:**
-  - Prompts for your domain, Trojan-Go password, and UUID (with an option to auto-generate one).
-  - Creates the `./caddy`, `./trojan-go`, and `./wwwroot` directories with populated configuration files.
-  - Loads helper functions (including `run_trojan_go`) into your current shell session for later use.
-- **Pro tip:** Because the script is sourced, any environment variables it exports remain available after it finishes. Open a new shell if you want to start over with fresh prompts.
-
-### 🌐 `configure_namecheap_dns.sh`
-Use this optional helper when Namecheap manages your DNS records:
-
-- **How to execute:** `bash ./configure_namecheap_dns.sh`
-- **What it does:**
-  - Interacts with the Namecheap API to set or update A/AAAA records for your domain.
-  - Fetches your public IP automatically (via `curl`) to minimize manual copying.
-  - Validates the response from Namecheap so you know the change succeeded.
-- **Before you run it:**
-  - Export the environment variables `NAMECHEAP_API_USER`, `NAMECHEAP_API_KEY`, `NAMECHEAP_USERNAME`, and `NAMECHEAP_CLIENT_IP`.
-  - Ensure your Namecheap account has API access enabled and whitelists the IP you are calling from.
-
-### ⚙️ `trojan_go_funcs.sh`
-This file collects reusable shell functions that power the scripts:
-
-- **How to use it:** You normally do not run this file directly; it is sourced by `configure_trojan-go.sh`.
-- **Key helpers inside:**
-  - `run_trojan_go` – launches `docker-compose -f docker-compose_trojan-go.yml up -d` and waits for healthy containers.
-  - `cleanup_trojan_go` – stops the stack and removes generated directories when you are finished.
-- **Why it matters:** Keeping the functions in one place makes it easier to reuse them in your own automation or to customize behaviors without editing multiple scripts.
-
-## 🚧 Bootstrap the environment
-1. Clone the repository and change into the directory.
-2. Source the configuration script so it can prompt for the values it needs and create the directory structure.
+For local development of the role install the testing toolchain:
 
 ```bash
-source ./configure_trojan-go.sh
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+ansible-galaxy collection install -r collections/requirements.yml
 ```
 
-The script performs the following tasks:
-- Collects your domain, Trojan-Go password, and UUID (it can generate one if you prefer).
-- Writes the answers into template files in `./trojan-go` and `./caddy`.
-- Creates a simple landing page under `./wwwroot/trojan/index.html` for traffic probing.
+## ⚙️ Variables
+Override these defaults from inventory variables or extra vars:
 
-When the script finishes you can run the helper function that it loads into your shell session:
+| Variable | Description | Default |
+| --- | --- | --- |
+| `trojan_go_caddy_domain_name` | Apex domain used for certificates | `example.com` |
+| `trojan_go_caddy_subdomain` | Subdomain that fronts Trojan-Go | `trojan` |
+| `trojan_go_caddy_password` | Shared secret for clients | `change-me` |
+| `trojan_go_caddy_project_root` | Base directory for generated files | `/opt/trojan-go-caddy` |
+| `trojan_go_caddy_trojan_port` | External TLS port exposed by Trojan-Go | `443` |
+| `trojan_go_caddy_http_port` | Port exposed by Caddy for HTTP traffic | `80` |
+| `trojan_go_caddy_https_port` | Port served by Caddy inside the container | `443` |
+| `trojan_go_caddy_caddy_image` | Container image for Caddy | `abiosoft/caddy` |
+| `trojan_go_caddy_trojan_image` | Container image for Trojan-Go | `p4gefau1t/trojan-go` |
+| `trojan_go_caddy_docker_users` | Additional OS users to add to the `docker` group | `[]` |
+
+See `roles/trojan_go_caddy/defaults/main.yml` for the full set of tunables, including filesystem layout and placeholder HTML content.
+
+## ▶️ Example usage
+The included playbook demonstrates how to map existing variable names from `lightsail-proxy` to the role:
 
 ```bash
-run_trojan_go
+ansible-playbook -i inventory.ini playbooks/provision.yml \
+  -e domain_name=example.com \
+  -e subdomain_name=demo \
+  -e trojan_go_password=$(uuidgen) \
+  -e "trojan_go_caddy_docker_users=['ubuntu']"
 ```
 
-This function wraps `docker-compose -f docker-compose_trojan-go.yml up -d` and waits for the containers to become healthy before returning.
+The play targets the `trojan_hosts` inventory group by default—adjust the inventory or pass `-l hostname` to scope execution.
 
-## 📂 Generated directories and files
-After the bootstrap script completes you should see the following tree:
+## 🧪 Testing with Molecule
+Run the Molecule scenario to lint and converge the role inside a Docker-based Ubuntu 22.04 container:
 
 ```bash
-├── caddy
-│   └── Caddyfile            # generated from example_caddyfile
-├── trojan-go
-│   └── config.json          # generated from example_config.json
-└── wwwroot
-    ├── caddy.log
-    └── trojan
-        └── index.html
+molecule test
 ```
 
-The `./ssl` directory will be created automatically by the Caddy container when certificates are obtained.
+The scenario installs the role, asserts that the generated configuration files exist, and keeps the stack idempotent across reruns.
 
-## 📝 Configuration notes
-- **Multiple users:** Edit `./trojan-go/config.json` to add more users to the `password` or `users` list after the initial run.
-- **Custom web root:** Replace the files under `./wwwroot` with your own static site. Caddy serves this directory on port 80/443 to provide legitimate-looking traffic.
-- **DNS setup:** Ensure your domain's A/AAAA records point to the host running this stack. You can adapt `configure_namecheap_dns.sh` or create the records manually via your DNS provider.
-- **Firewall rules:** Open ports 80 and 443 for Caddy, and the Trojan-Go port defined in `config.json` (default 443 when tunneled via WebSocket).
+> **Note:** Docker-in-Docker is required for the converge step; run Molecule on a host where Docker is available.
 
-## 🕹️ Operating the stack
-- **Start / restart:** `run_trojan_go`
-- **View logs:**
-  - `docker-compose -f docker-compose_trojan-go.yml logs -f caddy`
-  - `docker-compose -f docker-compose_trojan-go.yml logs -f trojan-go`
-- **Inspect status:** `docker ps --filter name=trojan-go`
-- **Update configuration:** Modify files in `./caddy` or `./trojan-go` and run `docker-compose -f docker-compose_trojan-go.yml restart <service>`.
-
-## 🧹 Cleanup
-To stop the services and remove the generated assets run:
+## 🤝 Integrating with `lightsail-proxy`
+The role can be consumed directly from this repository—`lightsail-proxy` does not need to maintain its own playbook unless it has extra host-specific tasks. A bootstrap script (e.g., Terraform user data) can clone the repo, install the dependencies, and invoke the provided playbook with the existing Terraform outputs:
 
 ```bash
-docker-compose -f docker-compose_trojan-go.yml down
-sudo rm -rf ./caddy ./trojan-go ./wwwroot ./ssl
+sudo apt-get update && sudo apt-get install -y python3-pip git
+git clone https://github.com/Jeonkwan/trojan-go-caddy.git /opt/trojan-go-caddy-role
+cd /opt/trojan-go-caddy-role
+python3 -m pip install --upgrade pip
+python3 -m pip install -r requirements.txt
+ansible-galaxy collection install -r collections/requirements.yml
+ANSIBLE_CONFIG=ansible.cfg ansible-playbook -i "${TARGET_HOST}," \
+  -u "${SSH_USER}" --private-key /path/to/key \
+  playbooks/provision.yml \
+  -e "domain_name=${DOMAIN}" \
+  -e "subdomain_name=${SUBDOMAIN}" \
+  -e "trojan_go_password=${TROJAN_PASSWORD}" \
+  -e "trojan_go_caddy_docker_users=['${SSH_USER}']"
 ```
 
-You can re-run `configure_trojan-go.sh` at any time to regenerate clean configuration files.
+Adjust the inventory string (`${TARGET_HOST}`) and SSH parameters to match how the instance is accessed during provisioning. When Terraform already manages the connection (for example via `remote-exec`), it can substitute the variables directly. The bundled playbook simply maps the historical variable names to the role’s defaults, so additional overrides can be passed via `-e` as needed.
 
-## 🩺 Troubleshooting
-| Symptom | Suggested fix |
-| ------- | -------------- |
-| Containers exit immediately | Run `docker-compose -f docker-compose_trojan-go.yml logs` to identify syntax errors in the generated files. |
-| Certificates are not issued | Confirm DNS records resolve to your host and that ports 80/443 are reachable from the internet. |
-| Clients cannot connect | Ensure the UUID/password matches the values in `config.json` and that any upstream firewall allows the Trojan-Go port. |
+If `lightsail-proxy` later grows host-specific logic, it can still include the role from its own playbook—see the follow-up plan in `plan/lightsail-proxy-integration.md` for the migration steps and alternatives (vendoring the role vs. pulling it dynamically).
 
-## 📚 Further reading
-- [Trojan-Go documentation](https://p4gefau1t.github.io/trojan-go/config/) explains advanced configuration options, including transport modes and routing policies.
-- [Caddy documentation](https://caddyserver.com/docs/) covers reverse proxy directives, TLS automation, and logging customization.
+## 🗃️ Migrating existing deployments
+Because the role manages the same directory structure as the legacy scripts, you can safely point it at hosts that previously used `configure_trojan-go.sh`. The role will render the configuration templates and recreate the Docker Compose stack to apply changes automatically.
 
-## License
-This repository follows the upstream license terms found in the original project. Check the project history or contact the maintainer if you require clarification.
+## 📄 License
+This project retains the original license—consult the repository history for details or open an issue if clarification is needed.

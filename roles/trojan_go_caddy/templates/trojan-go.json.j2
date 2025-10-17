@@ -1,0 +1,18 @@
+{
+  "run_type": "server",
+  "local_addr": "0.0.0.0",
+  "local_port": {{ trojan_go_caddy_trojan_port }},
+  "remote_addr": "caddy",
+  "remote_port": {{ trojan_go_caddy_http_port }},
+  "password": [
+    "{{ trojan_go_caddy_password }}"
+  ],
+  "ssl": {
+    "cert": "/ssl/{{ trojan_go_caddy_full_domain }}/{{ trojan_go_caddy_full_domain }}.crt",
+    "key": "/ssl/{{ trojan_go_caddy_full_domain }}/{{ trojan_go_caddy_full_domain }}.key",
+    "sni": "{{ trojan_go_caddy_full_domain }}"
+  },
+  "mux": {
+    "enabled": true
+  }
+}

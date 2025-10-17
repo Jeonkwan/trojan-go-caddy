@@ -1,0 +1,102 @@
+---
+- name: Verify role behaviour
+  hosts: all
+  gather_facts: false
+  vars:
+    trojan_config_path: /opt/trojan-go-caddy/trojan-go/config.json
+    placeholder_path: /opt/trojan-go-caddy/wwwroot/trojan/index.html
+    compose_path: /opt/trojan-go-caddy/docker-compose.yml
+    caddyfile_path: /opt/trojan-go-caddy/caddy/Caddyfile
+  tasks:
+    - name: Ensure Trojan-Go config exists
+      ansible.builtin.stat:
+        path: "{{ trojan_config_path }}"
+      register: trojan_config
+
+    - name: Ensure placeholder page exists
+      ansible.builtin.stat:
+        path: "{{ placeholder_path }}"
+      register: placeholder
+
+    - name: Ensure Docker Compose file exists
+      ansible.builtin.stat:
+        path: "{{ compose_path }}"
+      register: compose_file
+
+    - name: Ensure Caddyfile exists
+      ansible.builtin.stat:
+        path: "{{ caddyfile_path }}"
+      register: caddyfile
+
+    - name: Validate generated files exist
+      ansible.builtin.assert:
+        that:
+          - trojan_config.stat.exists
+          - placeholder.stat.exists
+          - compose_file.stat.exists
+          - caddyfile.stat.exists
+        fail_msg: "Trojan-Go role did not create expected files"
+
+    - name: Load Trojan-Go config
+      ansible.builtin.slurp:
+        path: "{{ trojan_config_path }}"
+      register: trojan_config_raw
+
+    - name: Parse Trojan-Go config
+      ansible.builtin.set_fact:
+        trojan_details: "{{ trojan_config_raw.content | b64decode | from_json }}"
+
+    - name: Validate Trojan-Go config content
+      ansible.builtin.assert:
+        that:
+          - trojan_details['run_type'] == 'server'
+          - trojan_details['local_addr'] == '0.0.0.0'
+          - trojan_details['remote_addr'] == 'caddy'
+          - trojan_details['password'] | length > 0
+          - trojan_details['ssl']['sni'] | length > 0
+          - trojan_details['mux']['enabled'] | bool
+        fail_msg: "Trojan-Go configuration content is invalid"
+
+    - name: Load placeholder HTML
+      ansible.builtin.slurp:
+        path: "{{ placeholder_path }}"
+      register: placeholder_raw
+
+    - name: Decode placeholder HTML
+      ansible.builtin.set_fact:
+        placeholder_html: "{{ placeholder_raw.content | b64decode }}"
+
+    - name: Ensure placeholder references generated domain
+      ansible.builtin.assert:
+        that:
+          - trojan_details['ssl']['sni'] in placeholder_html
+        fail_msg: "Placeholder page does not include expected domain"
+
+    - name: Load Docker Compose definition
+      ansible.builtin.slurp:
+        path: "{{ compose_path }}"
+      register: compose_raw
+
+    - name: Parse Docker Compose definition
+      ansible.builtin.set_fact:
+        compose_definition: "{{ compose_raw.content | b64decode | from_yaml }}"
+    - name: Validate Docker Compose services exist
+      ansible.builtin.assert:
+        that:
+          - "'services' in compose_definition"
+          - "'trojan-go' in compose_definition['services']"
+          - "'caddy' in compose_definition['services']"
+        fail_msg: "Docker Compose definition missing expected services"
+
+    - name: Extract Compose service definitions
+      ansible.builtin.set_fact:
+        trojan_service: "{{ compose_definition['services']['trojan-go'] }}"
+        caddy_service: "{{ compose_definition['services']['caddy'] }}"
+    - name: Validate Docker Compose service configuration
+      ansible.builtin.assert:
+        that:
+          - "'%s:%s' | format(trojan_details['local_port'], trojan_details['local_port']) in trojan_service['ports']"
+          - "'%s:80' | format(trojan_details['remote_port']) in caddy_service['ports']"
+          - "'depends_on' in trojan_service"
+          - "'caddy' in trojan_service['depends_on']"
+        fail_msg: "Docker Compose services are not wired as expected"

@@ -1,0 +1,44 @@
+---
+# Domain components. Override these from inventory or extra vars.
+trojan_go_caddy_domain_name: example.com
+trojan_go_caddy_subdomain: trojan
+
+# Automatically derived full domain.
+trojan_go_caddy_full_domain: "{{ trojan_go_caddy_subdomain }}.{{ trojan_go_caddy_domain_name }}"
+
+# Shared secret used by Trojan-Go clients.
+trojan_go_caddy_password: change-me
+
+# Filesystem layout
+trojan_go_caddy_project_root: /opt/trojan-go-caddy
+trojan_go_caddy_caddy_dir: "{{ trojan_go_caddy_project_root }}/caddy"
+trojan_go_caddy_trojan_dir: "{{ trojan_go_caddy_project_root }}/trojan-go"
+trojan_go_caddy_wwwroot_dir: "{{ trojan_go_caddy_project_root }}/wwwroot"
+trojan_go_caddy_webroot_dir: "{{ trojan_go_caddy_wwwroot_dir }}/trojan"
+trojan_go_caddy_log_file: "{{ trojan_go_caddy_wwwroot_dir }}/caddy.log"
+trojan_go_caddy_ssl_base_dir: "{{ trojan_go_caddy_project_root }}/ssl"
+trojan_go_caddy_ssl_domain_dir: "{{ trojan_go_caddy_ssl_base_dir }}/{{ trojan_go_caddy_full_domain }}"
+trojan_go_caddy_ssl_cert_path: "{{ trojan_go_caddy_ssl_domain_dir }}/{{ trojan_go_caddy_full_domain }}.crt"
+trojan_go_caddy_ssl_key_path: "{{ trojan_go_caddy_ssl_domain_dir }}/{{ trojan_go_caddy_full_domain }}.key"
+trojan_go_caddy_compose_filename: docker-compose.yml
+
+# Networking defaults
+trojan_go_caddy_http_port: 80
+trojan_go_caddy_https_port: 443
+trojan_go_caddy_trojan_port: 443
+
+# Container images
+trojan_go_caddy_caddy_image: abiosoft/caddy
+trojan_go_caddy_trojan_image: p4gefau1t/trojan-go
+
+# Additional configuration
+trojan_go_caddy_placeholder_html_title: "Trojan-Go Proxy"
+trojan_go_caddy_placeholder_html_message: "Deployment succeeded. Replace this file with your own static site."
+trojan_go_caddy_docker_users: []
+trojan_go_caddy_deploy_stack: true
+trojan_go_caddy_system_packages:
+  - curl
+  - docker.io
+  - docker-compose-plugin
+  - python3-pip
+  - uuid-runtime
