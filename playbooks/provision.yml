@@ -1,0 +1,12 @@
+---
+- name: Provision Trojan-Go reverse proxy
+  hosts: trojan_hosts
+  become: true
+
+  vars:
+    trojan_go_caddy_domain_name: "{{ domain_name | default(trojan_go_caddy_domain_name) }}"
+    trojan_go_caddy_subdomain: "{{ subdomain_name | default(trojan_go_caddy_subdomain) }}"
+    trojan_go_caddy_password: "{{ trojan_go_password | default(trojan_go_caddy_password) }}"
+
+  roles:
+    - role: trojan_go_caddy

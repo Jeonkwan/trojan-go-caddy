@@ -1,0 +1,22 @@
+---
+galaxy_info:
+  role_name: trojan_go_caddy
+  author: Jeonkwan
+  description: Deploy Trojan-Go with Caddy reverse proxy using Docker Compose.
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
+    - name: Debian
+      versions:
+        - bullseye
+  galaxy_tags:
+    - trojan
+    - caddy
+    - docker
+    - proxy
+    - networking
+
+dependencies: []

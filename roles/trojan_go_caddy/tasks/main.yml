@@ -1,0 +1,96 @@
+---
+- name: Ensure apt cache is up to date on Debian/Ubuntu
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  when: ansible_os_family | lower == 'debian'
+
+- name: Install required system packages
+  ansible.builtin.apt:
+    name: "{{ trojan_go_caddy_system_packages }}"
+    state: present
+  when: ansible_os_family | lower == 'debian'
+
+- name: Ensure Docker service is running
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+  when: trojan_go_caddy_deploy_stack | bool
+
+- name: Add configured users to docker group
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups:
+      - docker
+    append: true
+  loop: "{{ trojan_go_caddy_docker_users }}"
+  when: trojan_go_caddy_docker_users | length > 0
+
+- name: Create Trojan-Go project directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - "{{ trojan_go_caddy_project_root }}"
+    - "{{ trojan_go_caddy_caddy_dir }}"
+    - "{{ trojan_go_caddy_trojan_dir }}"
+    - "{{ trojan_go_caddy_wwwroot_dir }}"
+    - "{{ trojan_go_caddy_webroot_dir }}"
+    - "{{ trojan_go_caddy_ssl_base_dir }}"
+    - "{{ trojan_go_caddy_ssl_domain_dir }}"
+
+- name: Ensure Caddy log file exists
+  ansible.builtin.file:
+    path: "{{ trojan_go_caddy_log_file }}"
+    state: touch
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Deploy placeholder landing page
+  ansible.builtin.template:
+    src: placeholder.html.j2
+    dest: "{{ trojan_go_caddy_webroot_dir }}/index.html"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Recreate trojan-go stack
+
+- name: Render Caddy configuration
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: "{{ trojan_go_caddy_caddy_dir }}/Caddyfile"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Recreate trojan-go stack
+
+- name: Render Trojan-Go configuration
+  ansible.builtin.template:
+    src: trojan-go.json.j2
+    dest: "{{ trojan_go_caddy_trojan_dir }}/config.json"
+    owner: root
+    group: root
+    mode: '0640'
+  notify: Recreate trojan-go stack
+
+- name: Render Docker Compose definition
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ trojan_go_caddy_project_root }}/{{ trojan_go_caddy_compose_filename }}"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Recreate trojan-go stack
+
+- name: Deploy Trojan-Go and Caddy stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ trojan_go_caddy_project_root }}"
+    files:
+      - "{{ trojan_go_caddy_compose_filename }}"
+    state: present
+  when: trojan_go_caddy_deploy_stack | bool

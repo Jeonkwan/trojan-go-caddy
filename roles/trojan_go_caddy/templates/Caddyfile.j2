@@ -1,0 +1,11 @@
+{{ trojan_go_caddy_full_domain }}:{{ trojan_go_caddy_http_port }} {
+    root /usr/src/trojan
+    log /usr/src/caddy.log
+    index index.html
+}
+
+{{ trojan_go_caddy_full_domain }}:{{ trojan_go_caddy_https_port }} {
+    root /usr/src/trojan
+    log /usr/src/caddy.log
+    index index.html
+}

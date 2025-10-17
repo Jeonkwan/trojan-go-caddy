@@ -1,0 +1,8 @@
+---
+- name: Recreate trojan-go stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ trojan_go_caddy_project_root }}"
+    files:
+      - "{{ trojan_go_caddy_compose_filename }}"
+    state: present
+  when: trojan_go_caddy_deploy_stack | bool

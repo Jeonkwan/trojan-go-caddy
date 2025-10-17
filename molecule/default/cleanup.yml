@@ -1,0 +1,16 @@
+---
+- name: Cleanup delegated host artifacts
+  hosts: instance
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Remove trojan-go project directory
+      ansible.builtin.file:
+        path: /opt/trojan-go-caddy
+        state: absent
+    - name: Remove test user
+      ansible.builtin.user:
+        name: molecule
+        state: absent
+        remove: true
+      failed_when: false

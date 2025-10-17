@@ -1,0 +1,32 @@
+---
+dependency:
+  name: shell
+  command: |
+    ansible-galaxy collection install -r "$MOLECULE_PROJECT_DIRECTORY/collections/requirements.yml"
+
+driver:
+  name: default
+
+provisioner:
+  name: ansible
+  env:
+    ALLOW_BROKEN_CONDITIONALS: "1"
+    ANSIBLE_BROKEN_CONDITIONALS: "1"
+    ANSIBLE_CONFIG: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/ansible.cfg"
+  playbooks:
+    converge: converge.yml
+  inventory:
+    hosts:
+      all:
+        hosts:
+          instance:
+            ansible_connection: local
+            ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+scenario:
+  test_sequence:
+    - dependency
+    - cleanup
+    - converge
+    - verify
+    - cleanup

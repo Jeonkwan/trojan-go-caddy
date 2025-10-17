@@ -1,0 +1,4 @@
+ansible>=8,<10
+molecule[docker]>=5.0.0
+ansible-lint>=6.0.0
+pytest-testinfra>=8.0.0

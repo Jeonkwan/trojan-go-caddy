@@ -1,0 +1,21 @@
+services:
+  trojan-go:
+    image: {{ trojan_go_caddy_trojan_image }}
+    restart: always
+    ports:
+      - "{{ trojan_go_caddy_trojan_port }}:{{ trojan_go_caddy_trojan_port }}"
+    volumes:
+      - {{ trojan_go_caddy_trojan_dir }}:/etc/trojan-go
+      - {{ trojan_go_caddy_ssl_base_dir }}:/ssl
+    depends_on:
+      - caddy
+
+  caddy:
+    image: {{ trojan_go_caddy_caddy_image }}
+    restart: always
+    ports:
+      - "{{ trojan_go_caddy_http_port }}:80"
+    volumes:
+      - {{ trojan_go_caddy_wwwroot_dir }}:/usr/src
+      - {{ trojan_go_caddy_caddy_dir }}/Caddyfile:/etc/Caddyfile
+      - {{ trojan_go_caddy_ssl_base_dir }}:/root/.caddy/acme/acme-v02.api.letsencrypt.org/sites
