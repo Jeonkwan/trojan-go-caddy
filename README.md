@@ -87,13 +87,14 @@ operational task, see the [deployment guide](docs/deployment-guide.md).
 │   ├── deployment-guide.md   # Friendly, step-by-step instructions
 │   └── lightsail-integration-plan.md
 ├── rendered/                 # Generated configs (ignored by Git)
+├── legacy/                   # Archived manual setup scripts (see below)
 ├── Makefile                  # Convenience targets for lifecycle commands
 └── README.md
 ```
 
-Legacy helper scripts (`configure_trojan-go.sh`, `configure_namecheap_dns.sh`)
-are still present for backward compatibility. The new workflow supersedes them
-and avoids interactive prompts, making the stack easier to automate.
+Legacy helper scripts now live under [`legacy/`](legacy/README.md) so they stay
+available without cluttering the modern workflow. Consult that README for a
+full overview and guidance on when (or if) you should still use them.
 
 ## 🧪 Continuous validation
 
