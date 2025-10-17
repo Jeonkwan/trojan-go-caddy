@@ -1,0 +1,3 @@
+[trojan_go]
+# Replace with your server's hostname or IP address.
+proxy ansible_host=203.0.113.10 ansible_user=ubuntu

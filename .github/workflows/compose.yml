@@ -1,0 +1,32 @@
+name: Validate Compose Stack
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install template dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r docker/scripts/requirements.txt
+
+      - name: Prepare environment file
+        run: cp docker/config/env.example .env
+
+      - name: Render configuration
+        run: make render
+
+      - name: Validate docker compose config
+        run: docker compose --env-file .env -f docker/compose.yml config

@@ -1,4 +1,14 @@
+# Legacy generated directories from earlier bootstrap scripts
 caddy/
 trojan-go/
 wwwroot/
+ssl/
+
+# Newly rendered configuration artifacts
+rendered/*
+!rendered/.gitignore
+
 .DS_Store
+
+# Local environment overrides
+.env

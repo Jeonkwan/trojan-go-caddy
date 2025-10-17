@@ -1,0 +1,3 @@
+# Ignore rendered configuration and assets
+*
+!/.gitignore

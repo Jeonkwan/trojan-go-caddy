@@ -1,0 +1,17 @@
+{
+  "run_type": "server",
+  "local_addr": "0.0.0.0",
+  "local_port": {{ trojan_port }},
+  "password": [
+    "{{ trojan_password }}"
+  ],
+  "websocket": {
+    "enabled": true,
+    "path": "{{ websocket_path }}",
+    "host": "{{ domain }}"
+  },
+  "router": {
+    "enabled": false
+  },
+  "log_level": "info"
+}
