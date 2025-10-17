@@ -2,8 +2,6 @@ services:
   trojan-go:
       image: p4gefau1t/trojan-go
       restart: always
-      ports:
-        - "443:443"
       volumes:
         - ./trojan-go:/etc/trojan-go
         - ./ssl:/ssl
@@ -17,6 +15,7 @@ services:
       restart: always
       ports:
         - "80:80"
+        - "443:443"
       volumes:
         - ./wwwroot:/usr/src
         - ./caddy/Caddyfile:/etc/Caddyfile

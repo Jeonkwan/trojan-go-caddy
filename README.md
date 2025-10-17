@@ -116,7 +116,8 @@ The `./ssl` directory will be created automatically by the Caddy container when 
 - **Multiple users:** Edit `./trojan-go/config.json` to add more users to the `password` or `users` list after the initial run.
 - **Custom web root:** Replace the files under `./wwwroot` with your own static site. Caddy serves this directory on port 80/443 to provide legitimate-looking traffic.
 - **DNS setup:** Ensure your domain's A/AAAA records point to the host running this stack. You can adapt `configure_namecheap_dns.sh` or create the records manually via your DNS provider.
-- **Firewall rules:** Open ports 80 and 443 for Caddy, and the Trojan-Go port defined in `config.json` (default 443 when tunneled via WebSocket).
+- **Trojan-Go over WebSocket:** Clients should connect with `wss://<your-domain>/trojan` (override the path by exporting `WEBSOCKET_PATH` before running `configure_trojan-go.sh`). Set the Trojan-Go client `websocket` hostname to your domain so that CDN or proxy layers keep the correct `Host` header.
+- **Firewall rules:** Only expose ports 80 and 443 on the host. Caddy terminates TLS/HTTP traffic and forwards `/trojan` WebSocket requests to the internal Trojan-Go container, so no additional ports need to be reachable from the internet.
 
 ## 🕹️ Operating the stack
 - **Start / restart:** `run_trojan_go`

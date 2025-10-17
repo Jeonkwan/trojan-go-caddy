@@ -8,4 +8,11 @@ www.yourdomain.com:443 {
     root /usr/src/trojan
     log /usr/src/caddy.log
     index index.html
+
+    proxy /trojan https://trojan-go:443 {
+        websocket
+        header_upstream Host {host}
+        transparent
+        insecure_skip_verify
+    }
 }
