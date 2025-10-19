@@ -1,0 +1,18 @@
+{
+  "run_type": "server",
+  "local_addr": "{{ local_addr }}",
+  "local_port": {{ local_port }},
+  "remote_addr": "{{ remote_addr }}",
+  "remote_port": {{ remote_port }},
+  "password": [
+    "{{ trojan_password }}"
+  ],
+  "ssl": {
+    "cert": "{{ ssl_cert_path }}",
+    "key": "{{ ssl_key_path }}",
+    "sni": "{{ ssl_sni }}"
+  },
+  "mux": {
+    "enabled": {{ "true" if mux_enabled else "false" }}
+  }
+}

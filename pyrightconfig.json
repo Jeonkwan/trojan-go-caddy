@@ -1,0 +1,7 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/pyright/main/packages/pyright-schemas/pyrightconfig.schema.json",
+  "include": ["src"],
+  "reportMissingImports": true,
+  "pythonVersion": "3.10",
+  "typeCheckingMode": "basic"
+}

@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[dev]"
+      - name: Lint
+        run: ruff check .
+      - name: Type check
+        run: pyright
+      - name: Tests
+        run: pytest
+
+  docker-image:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          tags: trojan-go-caddy:ci
+          load: true
+      - name: Smoke test container bootstrap
+        env:
+          DATA_DIR: ${{ runner.temp }}/trojan-go-caddy
+        run: |
+          mkdir -p "${DATA_DIR}"
+          docker run --rm \
+            -e TROJAN_GO_CADDY_DOMAIN=ci.example \
+            -e TROJAN_GO_CADDY_TROJAN_PASSWORD=testpass \
+            -v "${DATA_DIR}:/data" \
+            trojan-go-caddy:ci --no-run-compose
+      - name: Validate docker-compose configuration
+        env:
+          DATA_DIR: ${{ runner.temp }}/trojan-go-caddy
+        run: |
+          docker compose -f "${DATA_DIR}/docker-compose.yml" config
+      - name: Verify docker compose availability
+        run: |
+          docker run --rm --entrypoint docker trojan-go-caddy:ci compose version
+      - name: Verify rendered assets
+        env:
+          DATA_DIR: ${{ runner.temp }}/trojan-go-caddy
+        run: |
+          test -f "${DATA_DIR}/docker-compose.yml"
+          test -f "${DATA_DIR}/caddy/Caddyfile"
+          test -f "${DATA_DIR}/trojan-go/config.json"
