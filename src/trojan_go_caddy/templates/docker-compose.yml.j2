@@ -1,0 +1,21 @@
+services:
+  trojan-go:
+    image: p4gefau1t/trojan-go
+    restart: always
+    ports:
+      - "443:443"
+    volumes:
+      - {{ directories['trojan_go_dir'] | tojson }}:/etc/trojan-go
+      - {{ directories['ssl_dir'] | tojson }}:/ssl
+    depends_on:
+      - caddy
+
+  caddy:
+    image: abiosoft/caddy
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - {{ directories['wwwroot_dir'] | tojson }}:/usr/src
+      - {{ (directories['caddy_dir'] + '/Caddyfile') | tojson }}:/etc/Caddyfile
+      - {{ directories['ssl_dir'] | tojson }}:/root/.caddy/acme/acme-v02.api.letsencrypt.org/sites

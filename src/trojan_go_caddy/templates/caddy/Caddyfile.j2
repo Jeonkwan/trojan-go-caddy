@@ -1,0 +1,11 @@
+{{ domain }}:80 {
+    root {{ caddy_root }}
+    log {{ caddy_log }}
+    index index.html
+}
+
+{{ domain }}:443 {
+    root {{ caddy_root }}
+    log {{ caddy_log }}
+    index index.html
+}

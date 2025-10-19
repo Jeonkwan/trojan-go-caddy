@@ -21,4 +21,19 @@
 **/obj
 **/secrets.dev.yaml
 **/values.dev.yaml
-README.md
+
+# Python project extras
+.git
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache
+.pytest_cache
+.mypy_cache
+.pyrightconfig.json
+plan/
+tests/
+example/
+configure_*.sh
+docker-compose_*.yml
